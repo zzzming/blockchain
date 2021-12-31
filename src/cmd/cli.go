@@ -81,12 +81,16 @@ func (cli *CommandLine) listAddresses(nodeID, walletDir string) {
 
 }
 
-func (cli *CommandLine) createWallet(nodeID string) {
+func (cli *CommandLine) createWallet(nodeID string) error {
 	wallets, _ := wallet.CreateWallets(nodeID, cli.Config.WalletDir)
-	address := wallets.AddWallet()
+	address, err := wallets.AddWallet()
+	if err != nil {
+		return err
+	}
 	wallets.SaveFile(nodeID)
 
 	fmt.Printf("New address is: %s\n", address)
+	return nil
 }
 
 func (cli *CommandLine) printChain(nodeID string) {
@@ -119,7 +123,7 @@ func (cli *CommandLine) createBlockChain(address, nodeID string) {
 	chain := blockchain.InitBlockChain(address, nodeID)
 	defer chain.Database.Close()
 
-	UTXOSet := blockchain.UTXOSet{chain}
+	UTXOSet := blockchain.UTXOSet{Blockchain: chain}
 	UTXOSet.Reindex()
 
 	fmt.Println("Finished!")
@@ -130,7 +134,7 @@ func (cli *CommandLine) getBalance(address, nodeID string) {
 		log.Panic("Address is not Valid")
 	}
 	chain := blockchain.ContinueBlockChain(nodeID)
-	UTXOSet := blockchain.UTXOSet{chain}
+	UTXOSet := blockchain.UTXOSet{Blockchain: chain}
 	defer chain.Database.Close()
 
 	balance := 0
@@ -153,7 +157,7 @@ func (cli *CommandLine) send(from, to string, amount int, nodeID string, mineNow
 		log.Panic("Address is not Valid")
 	}
 	chain := blockchain.ContinueBlockChain(nodeID)
-	UTXOSet := blockchain.UTXOSet{chain}
+	UTXOSet := blockchain.UTXOSet{Blockchain: chain}
 	defer chain.Database.Close()
 
 	wallets, err := wallet.CreateWallets(nodeID, cli.Config.WalletDir)
@@ -269,7 +273,9 @@ func (cli *CommandLine) Run() {
 	}
 
 	if createWalletCmd.Parsed() {
-		cli.createWallet(nodeID)
+		if err := cli.createWallet(nodeID); err != nil {
+			panic(err)
+		}
 	}
 	if listAddressesCmd.Parsed() {
 		cli.listAddresses(nodeID, cli.Config.WalletDir)

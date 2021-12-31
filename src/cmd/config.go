@@ -15,6 +15,7 @@ import (
 )
 
 type Config struct {
+	NodeId       string `json:"NodeId" yaml:"NodeId"`
 	WalletDir    string `json:"WalletDir" yaml:"WalletDir"`
 	DatabaseDir  string `json:"DatabaseDir" yaml:"DatabaseDir"`
 	Port         string `json:"Port" yaml:"Port"`

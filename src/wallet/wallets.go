@@ -30,13 +30,16 @@ func CreateWallets(nodeId, walletsFilePath string) (*Wallets, error) {
 	return &wallets, err
 }
 
-func (ws *Wallets) AddWallet() string {
-	wallet := MakeWallet()
+func (ws *Wallets) AddWallet() (string, error) {
+	wallet, err := NewWallet()
+	if err != nil {
+		return "", err
+	}
 	address := string(wallet.Address())
 
 	ws.Wallets[address] = wallet
 
-	return address
+	return address, nil
 }
 
 func (ws *Wallets) GetAllAddresses() []string {
@@ -67,7 +70,7 @@ func (ws *Wallets) LoadFile(nodeId string) error {
 	gob.Register(elliptic.P256())
 	decoder := gob.NewDecoder(bytes.NewReader(fileContent))
 	var wallets Wallets
-	err = decoder.Decode(&wallets)
+	err = decoder.Decode(&(wallets.Wallets))
 	if err != nil {
 		return err
 	}
@@ -84,7 +87,7 @@ func (ws *Wallets) SaveFile(nodeId string) {
 	gob.Register(elliptic.P256())
 
 	encoder := gob.NewEncoder(&content)
-	err := encoder.Encode(ws)
+	err := encoder.Encode(ws.Wallets)
 	if err != nil {
 		log.Panic(err)
 	}
