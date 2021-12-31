@@ -9,6 +9,11 @@ import (
 func main() {
 	defer os.Exit(0)
 
-	cmd := cmd.CommandLine{}
+	defaultConfigFile := "../config/mbt.yaml"
+	configFile := cmd.AssignString(os.Getenv("BLOCKCHAIN_CONFIG"), defaultConfigFile)
+	cmd, err := cmd.NewCommandLine(configFile)
+	if err != nil {
+		panic(err)
+	}
 	cmd.Run()
 }

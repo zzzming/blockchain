@@ -18,6 +18,16 @@ type CommandLine struct {
 	Config
 }
 
+func NewCommandLine(configFilePath string) (CommandLine, error) {
+	var cli CommandLine
+	config, err := ReadConfigFile(configFilePath)
+	if err != nil {
+		return cli, nil
+	}
+	cli.Config = config
+	return cli, nil
+}
+
 func (cli *CommandLine) printUsage() {
 	fmt.Println("Usage:")
 	fmt.Println(" getbalance -address ADDRESS - get the balance for an address")
