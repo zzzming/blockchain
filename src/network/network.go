@@ -118,6 +118,7 @@ func SendBlock(addr string, b *blockchain.Block) {
 }
 
 func SendData(addr string, data []byte) {
+	fmt.Printf("send data to address %s", addr)
 	conn, err := net.Dial(protocol, addr)
 
 	if err != nil {
@@ -436,8 +437,8 @@ func HandleConnection(conn net.Conn, chain *blockchain.BlockChain) {
 
 }
 
-func StartServer(nodeID, minerAddress string) {
-	nodeAddress = fmt.Sprintf("localhost:%s", nodeID)
+func StartServer(nodeID, minerAddress, port string) {
+	nodeAddress = fmt.Sprintf("localhost:%s", port) // nodeID)
 	mineAddress = minerAddress
 	ln, err := net.Listen(protocol, nodeAddress)
 	if err != nil {
@@ -449,6 +450,7 @@ func StartServer(nodeID, minerAddress string) {
 	defer chain.Database.Close()
 	go CloseDB(chain)
 
+	fmt.Printf("nodeAddress is %s and the first KnownNodes %s\n", nodeAddress, KnownNodes[0])
 	if nodeAddress != KnownNodes[0] {
 		SendVersion(KnownNodes[0], chain)
 	}

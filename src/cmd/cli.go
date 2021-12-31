@@ -47,7 +47,8 @@ func (cli *CommandLine) StartNode(nodeID, minerAddress string) {
 			log.Panic("Wrong miner address!")
 		}
 	}
-	network.StartServer(nodeID, minerAddress)
+	cli.Config.Port = "3000" // default
+	network.StartServer(nodeID, minerAddress, cli.Config.Port)
 }
 
 func (cli *CommandLine) reindexUTXO(nodeID string) {
@@ -277,11 +278,6 @@ func (cli *CommandLine) Run() {
 	}
 
 	if startNodeCmd.Parsed() {
-		nodeID := os.Getenv("NODE_ID")
-		if nodeID == "" {
-			startNodeCmd.Usage()
-			runtime.Goexit()
-		}
 		cli.StartNode(nodeID, *startNodeMiner)
 	}
 }

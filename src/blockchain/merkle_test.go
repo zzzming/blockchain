@@ -49,4 +49,3 @@ func TestNewMerkleNode(t *testing.T) {
 	assert.Equal(t, root, fmt.Sprintf("%x", tree.RootNode.Data), "Merkle node root has is equal")
 
 }
-
