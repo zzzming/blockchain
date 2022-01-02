@@ -155,13 +155,12 @@ func (chain *BlockChain) GetBlock(blockHash []byte) (Block, error) {
 	var block Block
 
 	err := chain.Database.View(func(txn *badger.Txn) error {
-		if item, err := txn.Get(blockHash); err != nil {
+		item, err := txn.Get(blockHash)
+		if err != nil {
 			return errors.New("Block is not found")
-		} else {
-			blockData, _ := item.Value()
-
-			block = *Deserialize(blockData)
 		}
+		blockData, _ := item.Value()
+		block = *Deserialize(blockData)
 		return nil
 	})
 	if err != nil {
@@ -272,8 +271,8 @@ func (chain *BlockChain) FindUTXO() map[string]TxOutputs {
 	return UTXO
 }
 
-func (bc *BlockChain) FindTransaction(ID []byte) (Transaction, error) {
-	iter := bc.Iterator()
+func (chain *BlockChain) FindTransaction(ID []byte) (Transaction, error) {
+	iter := chain.Iterator()
 
 	for {
 		block := iter.Next()
@@ -292,11 +291,11 @@ func (bc *BlockChain) FindTransaction(ID []byte) (Transaction, error) {
 	return Transaction{}, errors.New("Transaction does not exist")
 }
 
-func (bc *BlockChain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateKey) {
+func (chain *BlockChain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateKey) {
 	prevTXs := make(map[string]Transaction)
 
 	for _, in := range tx.Inputs {
-		prevTX, err := bc.FindTransaction(in.ID)
+		prevTX, err := chain.FindTransaction(in.ID)
 		Handle(err)
 		prevTXs[hex.EncodeToString(prevTX.ID)] = prevTX
 	}
@@ -304,14 +303,14 @@ func (bc *BlockChain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateKey)
 	tx.Sign(privKey, prevTXs)
 }
 
-func (bc *BlockChain) VerifyTransaction(tx *Transaction) bool {
+func (chain *BlockChain) VerifyTransaction(tx *Transaction) bool {
 	if tx.IsCoinbase() {
 		return true
 	}
 	prevTXs := make(map[string]Transaction)
 
 	for _, in := range tx.Inputs {
-		prevTX, err := bc.FindTransaction(in.ID)
+		prevTX, err := chain.FindTransaction(in.ID)
 		Handle(err)
 		prevTXs[hex.EncodeToString(prevTX.ID)] = prevTX
 	}
@@ -331,7 +330,8 @@ func retry(dir string, originalOpts badger.Options) (*badger.DB, error) {
 }
 
 func openDB(dir string, opts badger.Options) (*badger.DB, error) {
-	if db, err := badger.Open(opts); err != nil {
+	db, err := badger.Open(opts)
+	if err != nil {
 		if strings.Contains(err.Error(), "LOCK") {
 			if db, err := retry(dir, opts); err == nil {
 				log.Println("database unlocked, value log truncated")
@@ -340,7 +340,6 @@ func openDB(dir string, opts badger.Options) (*badger.DB, error) {
 			log.Println("could not unlock database:", err)
 		}
 		return nil, err
-	} else {
-		return db, nil
 	}
+	return db, nil
 }

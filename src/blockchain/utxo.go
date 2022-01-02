@@ -158,9 +158,7 @@ func (u *UTXOSet) Update(block *Block) {
 				}
 			}
 			newOutputs := TxOutputs{}
-			for _, out := range tx.Outputs {
-				newOutputs.Outputs = append(newOutputs.Outputs, out)
-			}
+			newOutputs.Outputs = append(newOutputs.Outputs, tx.Outputs...)
 
 			txID := append(utxoPrefix, tx.ID...)
 			if err := txn.Set(txID, newOutputs.Serialize()); err != nil {
@@ -175,17 +173,15 @@ func (u *UTXOSet) Update(block *Block) {
 
 func (u *UTXOSet) DeleteByPrefix(prefix []byte) {
 	deleteKeys := func(keysForDelete [][]byte) error {
-		if err := u.Blockchain.Database.Update(func(txn *badger.Txn) error {
+		err := u.Blockchain.Database.Update(func(txn *badger.Txn) error {
 			for _, key := range keysForDelete {
 				if err := txn.Delete(key); err != nil {
 					return err
 				}
 			}
 			return nil
-		}); err != nil {
-			return err
-		}
-		return nil
+		})
+		return err
 	}
 
 	collectSize := 100000
