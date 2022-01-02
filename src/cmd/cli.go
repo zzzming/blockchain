@@ -65,7 +65,7 @@ func (cli *CommandLine) StartNode(nodeID, minerAddress string) {
 func (cli *CommandLine) reindexUTXO(nodeID string) {
 	chain := blockchain.ContinueBlockChain(nodeID, cli.POWDifficulty)
 	defer chain.Database.Close()
-	UTXOSet := blockchain.UTXOSet{chain}
+	UTXOSet := blockchain.UTXOSet{Blockchain: chain}
 	UTXOSet.Reindex()
 
 	count := UTXOSet.CountTransactions()
