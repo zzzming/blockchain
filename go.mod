@@ -5,6 +5,7 @@ require (
 	github.com/dgraph-io/badger v1.5.4
 	github.com/ghodss/yaml v1.0.0
 	github.com/stretchr/testify v1.6.1
+	go.uber.org/automaxprocs v1.4.0
 	golang.org/x/crypto v0.0.0-20190426145343-a29dc8fdc734
 	gopkg.in/vrecan/death.v3 v3.0.1
 )

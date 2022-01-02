@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/zzzming/mbt/src/cmd"
+	_ "go.uber.org/automaxprocs"
 )
 
 func main() {

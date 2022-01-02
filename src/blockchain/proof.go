@@ -21,18 +21,17 @@ import (
 // Requirements:
 // The First few bytes must contain 0s
 
-const Difficulty = 12
-
 type ProofOfWork struct {
-	Block  *Block
-	Target *big.Int
+	Block      *Block
+	Target     *big.Int
+	difficulty int
 }
 
-func NewProof(b *Block) *ProofOfWork {
+func NewProof(b *Block, difficulty int) *ProofOfWork {
 	target := big.NewInt(1)
-	target.Lsh(target, uint(256-Difficulty))
+	target.Lsh(target, uint(256-difficulty))
 
-	pow := &ProofOfWork{b, target}
+	pow := &ProofOfWork{b, target, difficulty}
 
 	return pow
 }
@@ -43,7 +42,7 @@ func (pow *ProofOfWork) InitData(nonce int) []byte {
 			pow.Block.PrevHash,
 			pow.Block.HashTransactions(),
 			ToHex(int64(nonce)),
-			ToHex(int64(Difficulty)),
+			ToHex(int64(pow.difficulty)),
 		},
 		[]byte{},
 	)
@@ -51,13 +50,11 @@ func (pow *ProofOfWork) InitData(nonce int) []byte {
 	return data
 }
 
-func (pow *ProofOfWork) Run() (int, []byte) {
+func (pow *ProofOfWork) RunSingleThread() (int, []byte) {
 	var intHash big.Int
 	var hash [32]byte
 
-	nonce := 0
-
-	for nonce < math.MaxInt64 {
+	for nonce := 0; nonce < math.MaxInt64; nonce++ {
 		data := pow.InitData(nonce)
 		hash = sha256.Sum256(data)
 
@@ -65,15 +62,34 @@ func (pow *ProofOfWork) Run() (int, []byte) {
 		intHash.SetBytes(hash[:])
 
 		if intHash.Cmp(pow.Target) == -1 {
-			break
-		} else {
-			nonce++
+			fmt.Println()
+			return nonce, hash[:]
 		}
-
 	}
-	fmt.Println()
+	return -1, nil
+}
 
-	return nonce, hash[:]
+func (pow *ProofOfWork) Run() (int, []byte) {
+	threadPool := newPowPool()
+	return threadPool.run(pow.RunRange)
+}
+
+func (pow *ProofOfWork) RunRange(start, end int) (int, []byte) {
+	var intHash big.Int
+	var hash [32]byte
+
+	for nonce := start; nonce < end; nonce++ {
+		data := pow.InitData(nonce)
+		hash = sha256.Sum256(data)
+
+		intHash.SetBytes(hash[:])
+
+		if intHash.Cmp(pow.Target) == -1 {
+			fmt.Println()
+			return nonce, hash[:]
+		}
+	}
+	return -1, nil
 }
 
 func (pow *ProofOfWork) Validate() bool {

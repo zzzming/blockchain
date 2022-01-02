@@ -1,3 +1,4 @@
 NodeId: 1
 Port: 8964
 DBDir: ./tmp
+POWDifficulty: 24

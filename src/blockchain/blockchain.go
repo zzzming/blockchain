@@ -21,8 +21,9 @@ const (
 )
 
 type BlockChain struct {
-	LastHash []byte
-	Database *badger.DB
+	LastHash      []byte
+	Database      *badger.DB
+	POWDifficulty int
 }
 
 func DBexists(path string) bool {
@@ -33,7 +34,7 @@ func DBexists(path string) bool {
 	return true
 }
 
-func ContinueBlockChain(nodeId string) *BlockChain {
+func ContinueBlockChain(nodeId string, powDifficulty int) *BlockChain {
 	path := fmt.Sprintf(dbPath, nodeId)
 	if !DBexists(path) {
 		fmt.Println("No existing blockchain found, create one!")
@@ -58,13 +59,13 @@ func ContinueBlockChain(nodeId string) *BlockChain {
 	})
 	Handle(err)
 
-	chain := BlockChain{lastHash, db}
+	chain := BlockChain{lastHash, db, powDifficulty}
 
 	log.Println("blockchain obtained with lastHash")
 	return &chain
 }
 
-func InitBlockChain(address, nodeId string) *BlockChain {
+func InitBlockChain(address, nodeId string, powDifficulty int) *BlockChain {
 	path := fmt.Sprintf(dbPath, nodeId)
 	if DBexists(path) {
 		fmt.Println("Blockchain already exists")
@@ -80,7 +81,7 @@ func InitBlockChain(address, nodeId string) *BlockChain {
 
 	err = db.Update(func(txn *badger.Txn) error {
 		cbtx := CoinbaseTx(address, genesisData)
-		genesis := Genesis(cbtx)
+		genesis := Genesis(cbtx, powDifficulty)
 		fmt.Println("Genesis created")
 		err = txn.Set(genesis.Hash, genesis.Serialize())
 		Handle(err)
@@ -94,7 +95,7 @@ func InitBlockChain(address, nodeId string) *BlockChain {
 
 	Handle(err)
 
-	blockchain := BlockChain{lastHash, db}
+	blockchain := BlockChain{lastHash, db, powDifficulty}
 	return &blockchain
 }
 
@@ -215,7 +216,7 @@ func (chain *BlockChain) MineBlock(transactions []*Transaction) *Block {
 	})
 	Handle(err)
 
-	newBlock := CreateBlock(transactions, lastHash, lastHeight+1)
+	newBlock := CreateBlock(transactions, lastHash, lastHeight+1, chain.POWDifficulty)
 
 	err = chain.Database.Update(func(txn *badger.Txn) error {
 		err := txn.Set(newBlock.Hash, newBlock.Serialize())

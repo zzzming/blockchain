@@ -437,7 +437,7 @@ func HandleConnection(conn net.Conn, chain *blockchain.BlockChain) {
 
 }
 
-func StartServer(nodeID, minerAddress, port string) {
+func StartServer(nodeID, minerAddress, port string, powDifficult int) {
 	nodeAddress = fmt.Sprintf("localhost:%s", port) // nodeID)
 	mineAddress = minerAddress
 	ln, err := net.Listen(protocol, nodeAddress)
@@ -446,7 +446,7 @@ func StartServer(nodeID, minerAddress, port string) {
 	}
 	defer ln.Close()
 
-	chain := blockchain.ContinueBlockChain(nodeID)
+	chain := blockchain.ContinueBlockChain(nodeID, powDifficult)
 	defer chain.Database.Close()
 	go CloseDB(chain)
 

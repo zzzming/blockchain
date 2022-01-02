@@ -3,11 +3,11 @@ package cmd
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"runtime"
 	"strconv"
 
+	"github.com/apex/log"
 	"github.com/zzzming/mbt/src/blockchain"
 	"github.com/zzzming/mbt/src/network"
 	"github.com/zzzming/mbt/src/util"
@@ -24,6 +24,7 @@ func NewCommandLine(configFilePath string) (CommandLine, error) {
 	if err != nil {
 		return cli, nil
 	}
+	log.Infof("configuration is %v", config)
 	cli.Config = config
 	return cli, nil
 }
@@ -54,15 +55,15 @@ func (cli *CommandLine) StartNode(nodeID, minerAddress string) {
 		if wallet.ValidateAddress(minerAddress) {
 			fmt.Println("Mining is on. Address to receive rewards: ", minerAddress)
 		} else {
-			log.Panic("Wrong miner address!")
+			log.Fatalf("Wrong miner address!")
 		}
 	}
 	cli.Config.Port = "3000" // default
-	network.StartServer(nodeID, minerAddress, cli.Config.Port)
+	network.StartServer(nodeID, minerAddress, cli.Port, cli.POWDifficulty)
 }
 
 func (cli *CommandLine) reindexUTXO(nodeID string) {
-	chain := blockchain.ContinueBlockChain(nodeID)
+	chain := blockchain.ContinueBlockChain(nodeID, cli.POWDifficulty)
 	defer chain.Database.Close()
 	UTXOSet := blockchain.UTXOSet{chain}
 	UTXOSet.Reindex()
@@ -94,7 +95,7 @@ func (cli *CommandLine) createWallet(nodeID string) error {
 }
 
 func (cli *CommandLine) printChain(nodeID string) {
-	chain := blockchain.ContinueBlockChain(nodeID)
+	chain := blockchain.ContinueBlockChain(nodeID, cli.POWDifficulty)
 	defer chain.Database.Close()
 	iter := chain.Iterator()
 
@@ -103,7 +104,7 @@ func (cli *CommandLine) printChain(nodeID string) {
 
 		fmt.Printf("Hash: %x\n", block.Hash)
 		fmt.Printf("Prev. hash: %x\n", block.PrevHash)
-		pow := blockchain.NewProof(block)
+		pow := blockchain.NewProof(block, cli.POWDifficulty)
 		fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate()))
 		for _, tx := range block.Transactions {
 			fmt.Println(tx)
@@ -118,9 +119,9 @@ func (cli *CommandLine) printChain(nodeID string) {
 
 func (cli *CommandLine) createBlockChain(address, nodeID string) {
 	if !wallet.ValidateAddress(address) {
-		log.Panic("Address is not Valid")
+		log.Fatalf("Address is not Valid")
 	}
-	chain := blockchain.InitBlockChain(address, nodeID)
+	chain := blockchain.InitBlockChain(address, nodeID, cli.POWDifficulty)
 	defer chain.Database.Close()
 
 	UTXOSet := blockchain.UTXOSet{Blockchain: chain}
@@ -131,9 +132,9 @@ func (cli *CommandLine) createBlockChain(address, nodeID string) {
 
 func (cli *CommandLine) getBalance(address, nodeID string) {
 	if !wallet.ValidateAddress(address) {
-		log.Panic("Address is not Valid")
+		log.Fatalf("Address is not Valid")
 	}
-	chain := blockchain.ContinueBlockChain(nodeID)
+	chain := blockchain.ContinueBlockChain(nodeID, cli.POWDifficulty)
 	UTXOSet := blockchain.UTXOSet{Blockchain: chain}
 	defer chain.Database.Close()
 
@@ -151,18 +152,18 @@ func (cli *CommandLine) getBalance(address, nodeID string) {
 
 func (cli *CommandLine) send(from, to string, amount int, nodeID string, mineNow bool) {
 	if !wallet.ValidateAddress(to) {
-		log.Panic("Address is not Valid")
+		log.Fatalf("Address is not Valid")
 	}
 	if !wallet.ValidateAddress(from) {
-		log.Panic("Address is not Valid")
+		log.Fatalf("Address is not Valid")
 	}
-	chain := blockchain.ContinueBlockChain(nodeID)
+	chain := blockchain.ContinueBlockChain(nodeID, cli.POWDifficulty)
 	UTXOSet := blockchain.UTXOSet{Blockchain: chain}
 	defer chain.Database.Close()
 
 	wallets, err := wallet.CreateWallets(nodeID, cli.Config.WalletDir)
 	if err != nil {
-		log.Panic(err)
+		log.Fatalf("failed to create wallet error: %v", err)
 	}
 	wallet := wallets.GetWallet(from)
 
@@ -210,42 +211,42 @@ func (cli *CommandLine) Run() {
 	case "reindexutxo":
 		err := reindexUTXOCmd.Parse(os.Args[2:])
 		if err != nil {
-			log.Panic(err)
+			log.Fatalf("error %v", err)
 		}
 	case "getbalance":
 		err := getBalanceCmd.Parse(os.Args[2:])
 		if err != nil {
-			log.Panic(err)
+			log.Fatalf("error %v", err)
 		}
 	case "createblockchain":
 		err := createBlockchainCmd.Parse(os.Args[2:])
 		if err != nil {
-			log.Panic(err)
+			log.Fatalf("error %v", err)
 		}
 	case "startnode":
 		err := startNodeCmd.Parse(os.Args[2:])
 		if err != nil {
-			log.Panic(err)
+			log.Fatalf("error %v", err)
 		}
 	case "listaddresses":
 		err := listAddressesCmd.Parse(os.Args[2:])
 		if err != nil {
-			log.Panic(err)
+			log.Fatalf("error %v", err)
 		}
 	case "createwallet":
 		err := createWalletCmd.Parse(os.Args[2:])
 		if err != nil {
-			log.Panic(err)
+			log.Fatalf("error %v", err)
 		}
 	case "printchain":
 		err := printChainCmd.Parse(os.Args[2:])
 		if err != nil {
-			log.Panic(err)
+			log.Fatalf("error %v", err)
 		}
 	case "send":
 		err := sendCmd.Parse(os.Args[2:])
 		if err != nil {
-			log.Panic(err)
+			log.Fatalf("error %v", err)
 		}
 	default:
 		cli.printUsage()

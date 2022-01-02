@@ -15,11 +15,11 @@ import (
 )
 
 type Config struct {
-	NodeId       string `json:"NodeId" yaml:"NodeId"`
-	WalletDir    string `json:"WalletDir" yaml:"WalletDir"`
-	DatabaseDir  string `json:"DatabaseDir" yaml:"DatabaseDir"`
-	Port         string `json:"Port" yaml:"Port"`
-	POWDifficult int    `json:"POWDifficult" yaml:"POWDifficult"`
+	NodeId        string `json:"NodeId" yaml:"NodeId"`
+	WalletDir     string `json:"WalletDir" yaml:"WalletDir"`
+	DatabaseDir   string `json:"DatabaseDir" yaml:"DatabaseDir"`
+	Port          string `json:"Port" yaml:"Port"`
+	POWDifficulty int    `json:"POWDifficulty" yaml:"POWDifficulty"`
 }
 
 // ReadConfigFile reads configuration file.
@@ -62,6 +62,9 @@ func ReadConfigFile(configFile string) (Config, error) {
 		}
 	}
 
+	if config.POWDifficulty > 64 || config.POWDifficulty < 12 {
+		config.POWDifficulty = 12
+	}
 	return config, nil
 }
 

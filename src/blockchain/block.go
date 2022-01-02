@@ -3,8 +3,9 @@ package blockchain
 import (
 	"bytes"
 	"encoding/gob"
-	"log"
 	"time"
+
+	"github.com/apex/log"
 )
 
 type Block struct {
@@ -27,10 +28,12 @@ func (b *Block) HashTransactions() []byte {
 	return tree.RootNode.Data
 }
 
-func CreateBlock(txs []*Transaction, prevHash []byte, height int) *Block {
+func CreateBlock(txs []*Transaction, prevHash []byte, height, powDifficulty int) *Block {
 	block := &Block{time.Now().Unix(), []byte{}, txs, prevHash, 0, height}
-	pow := NewProof(block)
+	pow := NewProof(block, powDifficulty)
+	startTime := time.Now()
 	nonce, hash := pow.Run()
+	log.Infof("took %v run prood of work of a new block, nonce is %d", time.Since(startTime), nonce)
 
 	block.Hash = hash[:]
 	block.Nonce = nonce
@@ -38,8 +41,8 @@ func CreateBlock(txs []*Transaction, prevHash []byte, height int) *Block {
 	return block
 }
 
-func Genesis(coinbase *Transaction) *Block {
-	return CreateBlock([]*Transaction{coinbase}, []byte{}, 0)
+func Genesis(coinbase *Transaction, powDifficulty int) *Block {
+	return CreateBlock([]*Transaction{coinbase}, []byte{}, 0, powDifficulty)
 }
 
 func (b *Block) Serialize() []byte {
@@ -67,6 +70,6 @@ func Deserialize(data []byte) *Block {
 
 func Handle(err error) {
 	if err != nil {
-		log.Panic(err)
+		log.Fatalf("panic on error %v", err)
 	}
 }
