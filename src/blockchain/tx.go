@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/gob"
 
-	"github.com/zzzming/mbt/src/util"
-	"github.com/zzzming/mbt/src/wallet"
+	"github.com/zzzming/blockchain/src/util"
+	"github.com/zzzming/blockchain/src/wallet"
 )
 
 type TxOutput struct {

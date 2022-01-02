@@ -62,7 +62,7 @@ func (pow *ProofOfWork) RunSingleThread() (int, []byte) {
 		intHash.SetBytes(hash[:])
 
 		if intHash.Cmp(pow.Target) == -1 {
-			fmt.Println()
+			fmt.Printf("complete with nonce %d", nonce)
 			return nonce, hash[:]
 		}
 	}
@@ -85,7 +85,6 @@ func (pow *ProofOfWork) RunRange(start, end int) (int, []byte) {
 		intHash.SetBytes(hash[:])
 
 		if intHash.Cmp(pow.Target) == -1 {
-			fmt.Println()
 			return nonce, hash[:]
 		}
 	}

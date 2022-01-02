@@ -8,7 +8,7 @@ import (
 	"crypto/sha256"
 	"log"
 
-	"github.com/zzzming/mbt/src/util"
+	"github.com/zzzming/blockchain/src/util"
 	"golang.org/x/crypto/ripemd160"
 )
 

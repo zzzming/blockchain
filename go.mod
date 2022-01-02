@@ -1,4 +1,4 @@
-module github.com/zzzming/mbt
+module github.com/zzzming/blockchain
 
 require (
 	github.com/apex/log v1.9.0

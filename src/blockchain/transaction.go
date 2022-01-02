@@ -13,7 +13,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/zzzming/mbt/src/wallet"
+	"github.com/zzzming/blockchain/src/wallet"
 )
 
 type Transaction struct {

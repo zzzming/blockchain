@@ -8,10 +8,10 @@ import (
 	"strconv"
 
 	"github.com/apex/log"
-	"github.com/zzzming/mbt/src/blockchain"
-	"github.com/zzzming/mbt/src/network"
-	"github.com/zzzming/mbt/src/util"
-	"github.com/zzzming/mbt/src/wallet"
+	"github.com/zzzming/blockchain/src/blockchain"
+	"github.com/zzzming/blockchain/src/network"
+	"github.com/zzzming/blockchain/src/util"
+	"github.com/zzzming/blockchain/src/wallet"
 )
 
 type CommandLine struct {
@@ -65,7 +65,7 @@ func (cli *CommandLine) StartNode(nodeID, minerAddress string) {
 func (cli *CommandLine) reindexUTXO(nodeID string) {
 	chain := blockchain.ContinueBlockChain(nodeID, cli.POWDifficulty)
 	defer chain.Database.Close()
-	UTXOSet := blockchain.UTXOSet{chain}
+	UTXOSet := blockchain.UTXOSet{Blockchain: chain}
 	UTXOSet.Reindex()
 
 	count := UTXOSet.CountTransactions()

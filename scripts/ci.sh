@@ -9,7 +9,7 @@
 # absolute directory
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-BASE_PKG_DIR="github.com/zzzming/mbt/src/"
+BASE_PKG_DIR="github.com/zzzming/blockchain/src/"
 ALL_PKGS=""
 
 cd $DIR/../src
@@ -22,9 +22,9 @@ go vet ./...
 
 echo run go build
 mkdir -p ${DIR}/../bin
-rm -f ${DIR}/../bin/mbt
+rm -f ${DIR}/../bin/blockchain
 GIT_COMMIT=$(git rev-list -1 HEAD)
-go build -o ${DIR}/../bin/mbt -ldflags "-X main.gitCommit=$GIT_COMMIT"
+go build -o ${DIR}/../bin/blockchain -ldflags "-X main.gitCommit=$GIT_COMMIT"
 
 cd $DIR/../src
 go test ./...

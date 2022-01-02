@@ -3,7 +3,6 @@ package blockchain
 import (
 	"math"
 	"runtime"
-	"sync"
 
 	"github.com/apex/log"
 )
@@ -28,42 +27,44 @@ type nonceHashSig struct {
 type sig struct{}
 
 func (pp *PowPool) run(process func(start, end int) (int, []byte)) (int, []byte) {
-	foundChan := make(chan *nonceHashSig)
+	foundChan := make(chan *nonceHashSig, pp.poolSize)
 	workerCompleteChan := make(chan sig, pp.poolSize)
-	var wg sync.WaitGroup
-	defer func() {
-		wg.Wait()
-		close(foundChan)
-		close(workerCompleteChan)
-	}()
+	defer close(foundChan)
+	defer close(workerCompleteChan)
 
 	log.Infof("proof of work concurrent size %d, batch size %d", pp.poolSize, pp.batchSize)
 	var foundObj *nonceHashSig
 	nonce := -1
 	var data []byte
 	nonceCounter := 0
+	threadCounter := 0 // no need to be thread safe since only it's updated by this thread
 	//
 	for i := 0; i < pp.poolSize; i++ {
-		go processHelper(nonceCounter, nonceCounter+pp.batchSize, &wg, foundChan, workerCompleteChan, process)
+		go processHelper(nonceCounter, nonceCounter+pp.batchSize, foundChan, workerCompleteChan, process)
 		nonceCounter = nonceCounter + pp.batchSize + 1 // next iteration starting point
+		threadCounter++
 	}
 
-	for nonce == -1 {
+	for threadCounter > 0 {
 		select {
 		case foundObj = <-foundChan:
-			nonce = foundObj.nonce
-			data = foundObj.hash
+			if nonce == -1 || foundObj.nonce < nonce {
+				// multiple nonce can be found if the difficulty level is low
+				// so we will process all the possible nonce but only take the smallest one
+				nonce = foundObj.nonce
+				data = foundObj.hash
+			}
+			threadCounter--
 		case <-workerCompleteChan:
-			if nonceCounter < math.MaxInt64 {
+			threadCounter--
+			if nonceCounter < math.MaxInt64 && nonce < 1 {
 				endCounter := nonceCounter + pp.batchSize
 				if math.MaxInt64-pp.batchSize < nonceCounter {
 					endCounter = math.MaxInt64
 				}
-				go processHelper(nonceCounter, endCounter, &wg, foundChan, workerCompleteChan, process)
+				threadCounter++
+				go processHelper(nonceCounter, endCounter, foundChan, workerCompleteChan, process)
 				nonceCounter = endCounter + 1 // next iteration starting point
-
-			} else {
-				nonce = -2 //break out with nothing found
 			}
 		}
 	}
@@ -71,9 +72,7 @@ func (pp *PowPool) run(process func(start, end int) (int, []byte)) (int, []byte)
 	return nonce, data
 }
 
-func processHelper(start, end int, wg *sync.WaitGroup, successChan chan *nonceHashSig, nextWorkerChan chan sig, process func(start, end int) (int, []byte)) {
-	wg.Add(1)
-	defer wg.Done()
+func processHelper(start, end int, successChan chan *nonceHashSig, nextWorkerChan chan sig, process func(start, end int) (int, []byte)) {
 	nonce, data := process(start, end)
 	if nonce > 1 {
 		successChan <- &nonceHashSig{nonce, data}
